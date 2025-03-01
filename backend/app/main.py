@@ -2,8 +2,17 @@
 from fastapi import FastAPI, Depends
 from .auth import auth_backend, current_active_user, fastapi_users
 from .schemas.user import UserCreate, UserRead, UserUpdate
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # React frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include FastAPI-Users routes
 app.include_router(
