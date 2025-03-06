@@ -8,4 +8,4 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     # username: Mapped[str] = mapped_column(String(length=64), unique=True, nullable=False)
     username = Column(String, nullable=False, unique=True)
     # FastAPI-Users automatically includes email, hashed_password, is_active, and is_superuser
-    pass
+    # pass
