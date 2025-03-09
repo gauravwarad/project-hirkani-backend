@@ -4,6 +4,7 @@ from .auth import auth_backend, current_active_user, fastapi_users
 from .schemas.user import UserCreate, UserRead, UserUpdate
 from fastapi.middleware.cors import CORSMiddleware
 from .routers.user import user_router
+from .routers.follow import follow_router
 app = FastAPI()
 
 app.add_middleware(
@@ -45,7 +46,7 @@ app.include_router(
 )
 
 app.include_router(user_router)
-
+app.include_router(follow_router)
 
 # Protected route example
 @app.get("/protected-route")

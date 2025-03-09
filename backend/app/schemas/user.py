@@ -22,4 +22,6 @@ class ProfilePostSchema(BaseModel):
 class UserProfileSchema(BaseModel):
     username: str
     email: EmailStr
+    followers: List[str] = []
+    following: List[str] = []
     posts: List[ProfilePostSchema] = []
