@@ -15,3 +15,4 @@ class Post(Base):
     business_id = Column(UUID, ForeignKey("business.id", ondelete="CASCADE"), nullable=True)
     created_at = Column(DateTime, default=func.now())
 
+    poster = relationship("User", back_populates="posts")

@@ -1,6 +1,7 @@
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
 from sqlalchemy import Integer, String, Column
 # from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import relationship
 from ..database import Base
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
@@ -9,3 +10,4 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     username = Column(String, nullable=False, unique=True)
     # FastAPI-Users automatically includes email, hashed_password, is_active, and is_superuser
     # pass
+    posts = relationship("Post", back_populates="poster", cascade="all, delete-orphan")
