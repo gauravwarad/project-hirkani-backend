@@ -18,7 +18,7 @@ from app.auth import current_active_user
 home_router = APIRouter(tags=["HomePage"])
 
 
-@home_router.get("/home", response_model=List[PostSchema])
+@home_router.post("/home", response_model=List[PostSchema])
 async def get_home(request: HomePagePostRequest, db: AsyncSession = Depends(get_db), user = Depends(current_active_user)):
     
     # get all following ids of the current user
