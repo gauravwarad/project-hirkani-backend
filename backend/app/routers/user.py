@@ -33,6 +33,7 @@ async def get_user_profile(db: AsyncSession = Depends(get_db), user = Depends(cu
           "id": post.id,
           "title": post.title,
           "content": post.text,
+          "rating": post.rating,
           "created_at": post.created_at.isoformat()
       }
       for post in posts

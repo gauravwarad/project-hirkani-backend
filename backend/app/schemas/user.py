@@ -17,6 +17,7 @@ class ProfilePostSchema(BaseModel):
     id: int
     title: str
     content: str
+    rating: float
     created_at: datetime
 
 class UserProfileSchema(BaseModel):
