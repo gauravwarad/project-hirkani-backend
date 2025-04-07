@@ -23,6 +23,7 @@ async def get_home(request: HomePagePostRequest, db: AsyncSession = Depends(get_
     
     # get all following ids of the current user
     # get all posts from those users
+    # also store the username
     # pagination?
     # show those posts with latest posts first
 
@@ -55,7 +56,8 @@ async def get_home(request: HomePagePostRequest, db: AsyncSession = Depends(get_
           "title": post.title,
           "content": post.text,
           "rating": post.rating,
-          "created_at": post.created_at.isoformat()
+          "created_at": post.created_at.isoformat(),
+          "username": post.poster.username
       }
       for post in posts
     ]

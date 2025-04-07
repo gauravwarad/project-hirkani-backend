@@ -9,4 +9,5 @@ class Business(Base):
     google_id = Column(String)
     handler_id = Column(UUID, ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime, default=func.now())
-
+    name = Column(String, nullable=True)
+    address = Column(String, nullable=True)

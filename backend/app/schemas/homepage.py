@@ -11,6 +11,7 @@ class PostSchema(BaseModel):
     content: str
     rating: float
     created_at: datetime
+    username: str
 
 class HomePagePostRequest(BaseModel):
     skip: int = 0
