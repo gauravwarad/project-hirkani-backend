@@ -28,7 +28,8 @@ async def add_post(request: CreatePost, db: AsyncSession = Depends(get_db), user
     if business_exists:
         real_business_id = business_exists.id
     else:
-        business = Business(google_id=request.business_id) # handler id is null
+        business = Business(google_id=request.business_id, name=request.business_name, address=request.business_address) 
+        # handler id is null
         db.add(business)
         await db.commit()
         result = await db.execute(select(Business).filter(Business.google_id == request.business_id))
@@ -41,7 +42,8 @@ async def add_post(request: CreatePost, db: AsyncSession = Depends(get_db), user
         title=request.title,
         text=request.text,
         rating=request.rating,
-        business_id=real_business_id
+        business_id=real_business_id,
+        likes=0,
     )
     db.add(post)
     await db.commit()
@@ -54,7 +56,7 @@ async def search_places(request: SearchRequest, user = Depends(current_active_us
     # Load API Key from environment variables
     GOOGLE_MAPS_API_KEY = os.getenv("API_KEY")
     GOOGLE_PLACES_URL = "https://places.googleapis.com/v1/places:searchText"
-
+    
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": GOOGLE_MAPS_API_KEY,
@@ -62,8 +64,8 @@ async def search_places(request: SearchRequest, user = Depends(current_active_us
     }
     
     payload = {"textQuery": request.textQuery}
-    print("i have the payload ", payload)
-    print("api key? ", GOOGLE_MAPS_API_KEY)
+    # print("i have the payload ", payload)
+    # print("api key? ", GOOGLE_MAPS_API_KEY)
     # Make request to Google Places API
     response = requests.post(GOOGLE_PLACES_URL, json=payload, headers=headers)
 
@@ -80,5 +82,26 @@ async def search_places(request: SearchRequest, user = Depends(current_active_us
         )
         for place in data.get("places", [])
     ]
-    print(data)
+    # print(data)
     return PlacesSearchResult(places=results)
+
+
+# delete post api
+# remove the post from posts table, remove the likes from likes table, keep the business entry in the business table
+@post_router.delete("/delete-post/{post_id}", response_model=Message)
+async def delete_post(post_id: int, db: AsyncSession = Depends(get_db), user = Depends(current_active_user)):
+    # check if the post exists
+    result = await db.execute(select(Post).filter(Post.id == post_id))
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # check if the user is the owner of the post
+    if post.poster_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+    
+    # delete the post
+    await db.delete(post)
+    await db.commit()
+    
+    return {"message": "Post deleted successfully"}

@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from app.schemas.user import UserProfileSchema
+from app.schemas.user import UserProfileSchema, UserSearchResponse
 from app.models.user import User
 from app.models.post import Post
+from app.models.business import Business, BusinessFollow
 from app.routers.follow import get_followers, get_following
 from ..dependencies import get_db
 from app.auth import current_active_user
@@ -22,6 +23,7 @@ async def get_user_profile(db: AsyncSession = Depends(get_db), user = Depends(cu
     
     followers = await get_followers(user.id, db)
     following = await get_following(user.id, db)
+    # print("following is ", following)
 
     # Fetch user's posts
     result = await db.execute(select(Post).filter(Post.poster_id == user.id))
@@ -58,17 +60,24 @@ async def get_user_profile(db: AsyncSession = Depends(get_db), user = Depends(cu
   #     "created_at": "2025-03-06T12:00:00"
   #   }
   # ]
-
+    # get the businesses followed by the user
+    businesses_followed = []
+    result = await db.execute(select(Business).join(BusinessFollow).filter(BusinessFollow.follower_id == user.id))
+    businesses = result.scalars().all()
+    for business in businesses:
+        businesses_followed.append(business.name)
+    
     return UserProfileSchema(
         username=user.username,
         email=user.email,
         followers=followers,
         following=following,
-        posts=posts
+        posts=posts,
+        businesses_followed=businesses_followed
     )
 
 # to search for users to follow, idk
-@user_router.get("/search", response_model=List[UserProfileSchema])
+@user_router.get("/search", response_model=List[UserSearchResponse])
 async def search_users(query: str = Query(..., min_length=1), db: AsyncSession = Depends(get_db), user = Depends(current_active_user)):
     result = await db.execute(select(User).filter(User.username.ilike(f"%{query}%")).limit(10))
     users = result.scalars().all()

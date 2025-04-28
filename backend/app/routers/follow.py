@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from app.schemas.user import UserProfileSchema
+from app.schemas.user import UserFollowers, UserFollowing
 from app.models.user import User
 from app.schemas.follow import GetUserProfileSchema, Message
-from app.models.follow import Follow
+from app.models.follow import Follow, FollowRequests
 from ..dependencies import get_db
 from app.auth import current_active_user
 
@@ -53,10 +53,79 @@ async def follow_user(user_name: str, db: AsyncSession = Depends(get_db), user =
     if existing_follow:
         raise HTTPException(status_code=400, detail="Already following this user.")
 
-    follow = Follow(follower_id=user.id, following_id=user_id)
+    # follow = Follow(follower_id=user.id, following_id=user_id)
+    # db.add(follow)
+    # await db.commit()
+
+    follow_request = FollowRequests(sender_id=user.id, receiver_id=user_id)
+    db.add(follow_request)
+    await db.commit()
+    return {"message": "Follow request sent successfully"}
+
+# apis for 1. accepting a follow request, 2. rejecting a follow request, 3. cancelling a sent follow request
+@follow_router.post("/accept-follow-request/{user_name}", response_model=Message)
+async def accept_follow_request(user_name: str, db: AsyncSession = Depends(get_db), user = Depends(current_active_user)):
+    result = await db.execute(select(User).filter(User.username == user_name))
+    user_id = result.scalar().id
+
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="You cannot follow yourself.")
+    
+    stmt = select(FollowRequests).where(FollowRequests.sender_id == user_id, FollowRequests.receiver_id == user.id)
+    result = await db.execute(stmt)
+    existing_follow_request = result.scalar_one_or_none()
+    
+    if not existing_follow_request:
+        raise HTTPException(status_code=400, detail="No follow request from this user.")
+
+    follow = Follow(follower_id=user_id, following_id=user.id)
     db.add(follow)
     await db.commit()
-    return {"message": "Followed successfully"}
+
+    await db.delete(existing_follow_request)
+    await db.commit()
+    
+    return {"message": "Follow request accepted successfully"}
+
+@follow_router.delete("/reject-follow-request/{user_name}", response_model=Message)
+async def reject_follow_request(user_name: str, db: AsyncSession = Depends(get_db), user = Depends(current_active_user)):
+    result = await db.execute(select(User).filter(User.username == user_name))
+    user_id = result.scalar().id
+
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="You cannot follow yourself.")
+    
+    stmt = select(FollowRequests).where(FollowRequests.sender_id == user_id, FollowRequests.receiver_id == user.id)
+    result = await db.execute(stmt)
+    existing_follow_request = result.scalar_one_or_none()
+    
+    if not existing_follow_request:
+        raise HTTPException(status_code=400, detail="No follow request from this user.")
+
+    await db.delete(existing_follow_request)
+    await db.commit()
+    
+    return {"message": "Follow request rejected successfully"}
+
+@follow_router.delete("/cancel-follow-request/{user_name}", response_model=Message)
+async def cancel_follow_request(user_name: str, db: AsyncSession = Depends(get_db), user = Depends(current_active_user)):
+    result = await db.execute(select(User).filter(User.username == user_name))
+    user_id = result.scalar().id
+
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="You cannot follow yourself.")
+    
+    stmt = select(FollowRequests).where(FollowRequests.sender_id == user.id, FollowRequests.receiver_id == user_id)
+    result = await db.execute(stmt)
+    existing_follow_request = result.scalar_one_or_none()
+    
+    if not existing_follow_request:
+        raise HTTPException(status_code=400, detail="No follow request sent to this user.")
+
+    await db.delete(existing_follow_request)
+    await db.commit()
+    
+    return {"message": "Follow request cancelled successfully"}
 
 # Unfollow a user
 @follow_router.delete("/unfollow/{user_name}", response_model=Message)
@@ -80,11 +149,37 @@ async def get_followers(user_id: str, db: AsyncSession = Depends(get_db)):
     stmt = select(User.username).join(Follow, Follow.follower_id == User.id).where(Follow.following_id == user_id)
     result = await db.execute(stmt)
     followers = result.scalars().all()  # Extract list of User objects
-    return followers
+
+    requested1 = select(FollowRequests.sender_id).where(FollowRequests.receiver_id == user_id)
+    result = await db.execute(requested1)
+    # get username from users table
+    requested2 = result.scalars().all()
+    requested_users = await db.execute(select(User.username).where(User.id.in_(requested2)))
+    requested = requested_users.scalars().all()
+
+    return UserFollowers(
+        followers=followers,
+        followers_requested=requested
+    )
 
 # Get list of people the user is following
 async def get_following(user_id: str, db: AsyncSession = Depends(get_db)):
     stmt = select(User.username).join(Follow, Follow.following_id == User.id).where(Follow.follower_id == user_id)
     result = await db.execute(stmt)
     following = result.scalars().all()  # Extract list of User objects
-    return following
+
+    stmt2 = select(User.username).join(FollowRequests, FollowRequests.receiver_id == User.id).where(FollowRequests.sender_id == user_id)
+    result = await db.execute(stmt2)
+    following2 = result.scalars().all()  # Extract list of User objects
+    # print("following2", following2)
+    # requested1 = select(FollowRequests.receiver_id).where(FollowRequests.sender_id == user_id)
+    # result = await db.execute(requested1)
+    # # get username from users table
+    # requested2 = result.scalars().all()
+    # requested_users = await db.execute(select(User.username).where(User.id.in_(requested2)))
+    # requested = requested_users.scalars().all()
+
+    return UserFollowing(
+        following=following,
+        following_requested=following2
+    )

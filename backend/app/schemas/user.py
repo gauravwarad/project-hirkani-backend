@@ -20,9 +20,23 @@ class ProfilePostSchema(BaseModel):
     rating: float
     created_at: datetime
 
+
+class UserFollowers(BaseModel):
+    followers: List[str] = []
+    followers_requested: List[str] = []
+
+class UserFollowing(BaseModel):
+    following: List[str] = []
+    following_requested: List[str] = []
+
 class UserProfileSchema(BaseModel):
     username: str
     email: EmailStr
-    followers: List[str] = []
-    following: List[str] = []
+    followers: UserFollowers
+    following: UserFollowing
     posts: List[ProfilePostSchema] = []
+    businesses_followed: List[str] = []
+
+class UserSearchResponse(BaseModel):
+    username: str
+    email: EmailStr

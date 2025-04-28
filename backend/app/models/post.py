@@ -16,3 +16,11 @@ class Post(Base):
     created_at = Column(DateTime, default=func.now())
 
     poster = relationship("User", back_populates="posts")
+
+class Likes(Base):
+    __tablename__ = "likes"
+    # likes table - id, post id, user id
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=func.now())

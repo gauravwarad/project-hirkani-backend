@@ -12,6 +12,8 @@ class PostSchema(BaseModel):
     rating: float
     created_at: datetime
     username: str
+    likes: int = 0
+    is_liked: bool = False
 
 class HomePagePostRequest(BaseModel):
     skip: int = 0

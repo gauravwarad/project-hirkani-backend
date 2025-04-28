@@ -7,6 +7,8 @@ from .routers.user import user_router
 from .routers.post import post_router
 from .routers.follow import follow_router
 from .routers.homepage import home_router
+from .routers.discover import discover_router
+from .routers.business import business_router
 app = FastAPI()
 
 app.add_middleware(
@@ -51,6 +53,8 @@ app.include_router(user_router)
 app.include_router(follow_router)
 app.include_router(post_router)
 app.include_router(home_router)
+app.include_router(discover_router)
+app.include_router(business_router)
 
 # Protected route example
 @app.get("/protected-route")

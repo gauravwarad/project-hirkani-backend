@@ -15,6 +15,8 @@ class PlacesSearchResult(BaseModel):
 
 class CreatePost(BaseModel):
     business_id: str # which actually is the google place id
+    business_name: str
+    business_address: str
     title: str
     text: str
     rating: float
