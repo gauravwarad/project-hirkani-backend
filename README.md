@@ -1,6 +1,7 @@
 Capstone Project.
 Project Name - Trust Me Bro!
 
+Frontend is at https://github.com/gauravwarad/project-hirkani-frontend
 
 1. Database
     1.1 Database - Postgres
